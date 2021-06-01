@@ -1,11 +1,19 @@
-#include <stdio.h>
+#include <exception>
 
-#include "VulkanInitializers.h"
+#include "VulkanApp.h"
 
 int main(int argc, char** argv)
 {
-    auto test = vks::initializers::submitInfo();
-    printf("%i\n", test.sType);
+    VulkanApp app;
 
-    return 0;
+    try
+    {
+        app.run();
+    }
+    catch(std::exception e)
+    {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 }

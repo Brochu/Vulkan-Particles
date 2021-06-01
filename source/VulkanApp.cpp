@@ -82,19 +82,7 @@ static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 
 static void keyboardInputCallback(GLFWwindow* window, int key, int scanCode, int action, int mods)
 {
-    auto app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-    switch(key)
-    {
-        case GLFW_KEY_W: app->scrollUp(); break;
-        case GLFW_KEY_A: app->scrollLeft(); break;
-        case GLFW_KEY_S: app->scrollDown(); break;
-        case GLFW_KEY_D: app->scrollRight(); break;
-
-        case GLFW_KEY_UP: app->zoomIn(); break;
-        case GLFW_KEY_DOWN: app->zoomOut(); break;
-    }
-
-    //printf("values (%f, %f, %f)\n", app->mandelbrotVals.x, app->mandelbrotVals.y, app->mandelbrotVals.z);
+    // Keyboard implementation
 }
 
 void VulkanApp::run()
@@ -113,14 +101,10 @@ void VulkanApp::initWindow()
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Do not create OpenGL context...
 
-    window = glfwCreateWindow(WIDTH, HEIGHT, "My Vulkan App", nullptr, nullptr);
+    window = glfwCreateWindow(WIDTH, HEIGHT, "GPU Particles - Vulkan", nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
     glfwSetKeyCallback(window, keyboardInputCallback);
-
-    mandelbrotVals.x = 0.f;
-    mandelbrotVals.y = 0.f;
-    mandelbrotVals.z = 1.f;
 }
 void VulkanApp::initVulkan()
 {
@@ -324,7 +308,7 @@ void VulkanApp::createInstance()
 
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Hello Triangle";
+    appInfo.pApplicationName = "GPU Particles - Vulkan";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "No engine";
     //appInfo.apiVersion = VK_VERSION_1_2;
@@ -1353,28 +1337,3 @@ void VulkanApp::createDescriptorSets()
     }
 }
 
-void VulkanApp::scrollUp()
-{
-    mandelbrotVals.y += 0.1f * mandelbrotVals.z * 1;
-}
-void VulkanApp::scrollLeft()
-{
-    mandelbrotVals.x += 0.1f * mandelbrotVals.z * 1;
-}
-void VulkanApp::scrollDown()
-{
-    mandelbrotVals.y -= 0.1f * mandelbrotVals.z * 1;
-}
-void VulkanApp::scrollRight()
-{
-    mandelbrotVals.x -= 0.1f * mandelbrotVals.z * 1;
-}
-
-void VulkanApp::zoomIn()
-{
-    mandelbrotVals.z /= 1.25;
-}
-void VulkanApp::zoomOut()
-{
-    mandelbrotVals.z *= 1.25;
-}
