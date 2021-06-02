@@ -1,4 +1,3 @@
-#include "glm/fwd.hpp"
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -6,6 +5,7 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
+#include "glm/fwd.hpp"
 
 #include <array>
 #include <assert.h>
@@ -75,7 +75,11 @@ struct Vertex
 
 struct UniformBufferObject
 {
-    glm::vec4 mandelbrotValues;
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+
+    glm::vec4 time;
 };
 
 class VulkanApp
@@ -84,17 +88,6 @@ public:
     void run();
 
     bool frameBufferResized = false;
-
-    // Mandelbrot controls
-    void scrollUp();
-    void scrollLeft();
-    void scrollDown();
-    void scrollRight();
-
-    void zoomIn();
-    void zoomOut();
-
-    glm::vec3 mandelbrotVals;
 
 private:
     // Main app funcs
@@ -138,6 +131,7 @@ private:
             VkMemoryPropertyFlags properties,
             VkBuffer& buffer,
             VkDeviceMemory& bufferMemory);
+    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     void createVertexBuffer();
     void createUniformBuffers();
     void updateUniformBuffer(uint32_t currentImage);
@@ -183,8 +177,8 @@ private:
     std::vector<VkDescriptorSet> descriptorSets;
     size_t currentFrame = 0;
 
-    const uint32_t WIDTH = 1600;
-    const uint32_t HEIGHT = 900;
+    const uint32_t WIDTH = 800;
+    const uint32_t HEIGHT = 600;
     const int MAX_FRAMES_IN_FLIGHT = 2;
 
     const std::vector<const char*> validationLayers =
@@ -199,13 +193,9 @@ private:
 
     const std::vector<Vertex> vertices =
     { //  pos           color    uvs
-        {{-1.f, -1.f}, {0,0,0}, {0.f, 0.f}},
-        {{ 1.f, -1.f}, {1,1,1}, {1.f, 0.f}},
-        {{-1.f,  1.f}, {1,1,1}, {0.f, 1.f}},
-
-        {{-1.f,  1.0}, {1,1,1}, {0.f, 1.f}},
-        {{ 1.f, -1.f}, {1,1,1}, {1.f, 0.f}},
-        {{ 1.f,  1.f}, {0,0,0}, {1.f, 1.f}}
+        {{ 0.0f, -0.5f}, {1,0,0}, { 0.0f, 0.0f}},
+        {{ 0.5f,  0.5f}, {0,1,0}, { 0.0f, 0.0f}},
+        {{-0.5f,  0.5f}, {0,0,1}, { 0.0f, 0.0f}},
     };
 
 #ifdef NDEBUG
