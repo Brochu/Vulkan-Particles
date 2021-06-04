@@ -133,6 +133,7 @@ private:
             VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     void createVertexBuffer();
+    void createIndexBuffer();
     void createUniformBuffers();
     void updateUniformBuffer(uint32_t currentImage);
     void createDescriptorPool();
@@ -171,6 +172,8 @@ private:
 
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     VkDescriptorPool descriptorPool;
@@ -192,10 +195,15 @@ private:
     };
 
     const std::vector<Vertex> vertices =
-    { //  pos           color    uvs
-        {{ 0.0f, -0.5f}, {1,0,0}, { 0.0f, 0.0f}},
-        {{ 0.5f,  0.5f}, {0,1,0}, { 0.0f, 0.0f}},
-        {{-0.5f,  0.5f}, {0,0,1}, { 0.0f, 0.0f}},
+    {   //  pos           color    uvs
+        {{-0.5f, -0.5f}, {1,0,0}, { 0.0f, 0.0f}},
+        {{ 0.5f, -0.5f}, {0,1,0}, { 1.0f, 0.0f}},
+        {{ 0.5f,  0.5f}, {0,0,1}, { 1.0f, 1.0f}},
+        {{-0.5f,  0.5f}, {1,1,1}, { 0.0f, 1.0f}},
+    };
+    const std::vector<uint16_t> indices =
+    {
+        0, 1, 2, 2, 3, 0
     };
 
 #ifdef NDEBUG
