@@ -4,8 +4,7 @@
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
-#include <glm/ext.hpp>
-#include "glm/fwd.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <array>
 #include <assert.h>
@@ -39,7 +38,6 @@ struct Vertex
 {
     glm::vec2 pos;
     glm::vec3 color;
-    glm::vec2 uvs;
 
     static VkVertexInputBindingDescription getBindingDescription()
     {
@@ -51,9 +49,9 @@ struct Vertex
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions()
+    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
     {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
@@ -63,11 +61,6 @@ struct Vertex
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-        attributeDescriptions[2].binding = 0;
-        attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(Vertex, uvs);
 
         return attributeDescriptions;
     }
@@ -174,6 +167,7 @@ private:
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
+
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     VkDescriptorPool descriptorPool;
@@ -195,11 +189,11 @@ private:
     };
 
     const std::vector<Vertex> vertices =
-    {   //  pos           color    uvs
-        {{-0.5f, -0.5f}, {1,0,0}, { 0.0f, 0.0f}},
-        {{ 0.5f, -0.5f}, {0,1,0}, { 1.0f, 0.0f}},
-        {{ 0.5f,  0.5f}, {0,0,1}, { 1.0f, 1.0f}},
-        {{-0.5f,  0.5f}, {1,1,1}, { 0.0f, 1.0f}},
+    {   //  pos           color
+        {{-0.5f, -0.5f}, {1,0,0}},
+        {{ 0.5f, -0.5f}, {0,1,0}},
+        {{ 0.5f,  0.5f}, {0,0,1}},
+        {{-0.5f,  0.5f}, {1,1,1}},
     };
     const std::vector<uint16_t> indices =
     {

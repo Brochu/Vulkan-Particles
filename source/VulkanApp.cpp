@@ -865,7 +865,7 @@ void VulkanApp::createGraphicsPipeline()
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL; // How to draw shapes, any other than fill need GPU feature
     rasterizer.lineWidth = 1.f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT; // What type of faces should we cull, front back or both
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE; // How to define front and back faces (vertex ordering)
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; // How to define front and back faces (vertex ordering)
     rasterizer.depthBiasEnable = VK_FALSE; // Bias for depth info, normally used for shadow maps
     rasterizer.depthBiasConstantFactor = 0.f;
     rasterizer.depthBiasClamp = 0.f;
@@ -1116,6 +1116,11 @@ void VulkanApp::createCommandBuffers()
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
+        VkBuffer vertexBuffers[] = {vertexBuffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
         vkCmdBindDescriptorSets(commandBuffers[i],
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                 pipelineLayout,
@@ -1124,11 +1129,6 @@ void VulkanApp::createCommandBuffers()
                 &descriptorSets[i],
                 0,
                 nullptr);
-
-        VkBuffer vertexBuffers[] = {vertexBuffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
         vkCmdEndRenderPass(commandBuffers[i]);
@@ -1326,12 +1326,12 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
 
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.f), time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
-    ubo.view = glm::lookAt(glm::vec3(2.f, 2.f, 2.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f));
+    ubo.view = glm::lookAt(glm::vec3(2.f, 2.f, 2.f) * glm::abs(glm::cos(time)) + glm::vec3(1, 1, 1), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f));
     ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.f);
 
     ubo.proj[1][1] *= -1; // Fix since GLM is made for OpenGL, the coordinate system is different for Vulkan
 
-    ubo.time = { time, time, time, time};
+    ubo.time = { time, time * 2, time * time, time / 2 };
 
     void* data;
     vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
@@ -1341,15 +1341,11 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
 
 void VulkanApp::createDescriptorPool()
 {
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(swapChainImages.size());
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(swapChainImages.size());
+    auto poolSize = vks::initializers::descriptorPoolSize(
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        static_cast<uint32_t>(swapChainImages.size())
+    );
+    auto poolInfo = vks::initializers::descriptorPoolCreateInfo(1, &poolSize, static_cast<uint32_t>(swapChainImages.size()));
 
     if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
     {
@@ -1361,11 +1357,11 @@ void VulkanApp::createDescriptorSets()
 {
     std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
 
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
-    allocInfo.pSetLayouts = layouts.data();
+    auto allocInfo = vks::initializers::descriptorSetAllocateInfo(
+        descriptorPool,
+        layouts.data(),
+        static_cast<uint32_t>(swapChainImages.size())
+    );
 
     descriptorSets.resize(swapChainImages.size());
     if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
@@ -1380,18 +1376,11 @@ void VulkanApp::createDescriptorSets()
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBufferObject);
 
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-
-        descriptorWrite.pBufferInfo = &bufferInfo;
-        descriptorWrite.pImageInfo = nullptr;
-        descriptorWrite.pTexelBufferView = nullptr;
+        auto descriptorWrite = vks::initializers::writeDescriptorSet(
+            descriptorSets[i],
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            0,
+            &bufferInfo);
 
         vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
     }
