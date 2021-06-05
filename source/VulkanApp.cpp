@@ -1326,8 +1326,8 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
 
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.f), time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
-    ubo.view = glm::lookAt(glm::vec3(2.f, 2.f, 2.f) * glm::abs(glm::cos(time)) + glm::vec3(1, 1, 1), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f));
-    ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.f);
+    ubo.view = glm::lookAt(glm::vec3(5.f, 5.f, 5.f) * glm::abs(glm::cos(time)) + glm::vec3(1, 1, 1), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f));
+    ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
 
     ubo.proj[1][1] *= -1; // Fix since GLM is made for OpenGL, the coordinate system is different for Vulkan
 
