@@ -125,6 +125,7 @@ void VulkanApp::initVulkan()
     createFramebuffers();
     createCommandPool();
     createVertexBuffer();
+    createInstanceBuffer();
     createIndexBuffer();
     createUniformBuffers();
     createDescriptorPool();
@@ -274,6 +275,9 @@ void VulkanApp::drawFrame()
 void VulkanApp::cleanup()
 {
     cleanupSwapChain();
+
+    vkDestroyBuffer(device, instanceBuffer, nullptr);
+    vkFreeMemory(device, instanceBufferMemory, nullptr);
 
     vkDestroyBuffer(device, indexBuffer, nullptr);
     vkFreeMemory(device, indexBufferMemory, nullptr);
@@ -821,15 +825,30 @@ void VulkanApp::createGraphicsPipeline()
     };
 
     // Setup vertex inputs stage
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescription = Vertex::getAttributeDescriptions();
+    std::vector<VkVertexInputBindingDescription> bindingDescriptions =
+    {
+        Vertex::getBindingDescription(),
+        PerInstance::getBindingDescription()
+    };
+    auto vertexAttributes = Vertex::getAttributeDescriptions();
+    auto instanceAttributes = PerInstance::getAttributeDescriptions();
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions =
+    {
+        vertexAttributes[0],
+        vertexAttributes[1],
+
+        instanceAttributes[0],
+        instanceAttributes[1],
+        instanceAttributes[2],
+        instanceAttributes[3],
+    };
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescription.size());
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
+    vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     // Setup input assembly stage
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -1117,8 +1136,10 @@ void VulkanApp::createCommandBuffers()
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
         VkBuffer vertexBuffers[] = {vertexBuffer};
+        VkBuffer instanceBuffers[] = {instanceBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(commandBuffers[i], 1, 1, instanceBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(commandBuffers[i],
@@ -1130,7 +1151,7 @@ void VulkanApp::createCommandBuffers()
                 0,
                 nullptr);
 
-        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), static_cast<uint32_t>(perInstanceValues.size()), 0, 0, 0);
         vkCmdEndRenderPass(commandBuffers[i]);
 
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS)
@@ -1271,6 +1292,43 @@ void VulkanApp::createVertexBuffer()
     vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
+void VulkanApp::createInstanceBuffer()
+{
+    perInstanceValues.resize(1000000);
+    for(int i = 0; i < perInstanceValues.size(); ++i)
+    {
+        float x = ((rand() / (float) RAND_MAX) - 0.5f) * 100;
+        float y = ((rand() / (float) RAND_MAX) - 0.5f) * 100;
+        perInstanceValues[i].transform = glm::translate(glm::mat4(1.f), glm::vec3(x, y, 0.f));
+    }
+
+    VkDeviceSize bufferSize = sizeof(perInstanceValues[0]) * perInstanceValues.size();
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(bufferSize,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer,
+        stagingBufferMemory);
+
+    void* data;
+    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, perInstanceValues.data(), (size_t) bufferSize);
+    vkUnmapMemory(device, stagingBufferMemory);
+
+    createBuffer(bufferSize,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        instanceBuffer,
+        instanceBufferMemory);
+
+    copyBuffer(stagingBuffer, instanceBuffer, bufferSize);
+
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
+
 void VulkanApp::createIndexBuffer()
 {
     VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
@@ -1326,8 +1384,8 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
 
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.f), time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
-    ubo.view = glm::lookAt(glm::vec3(5.f, 5.f, 5.f) * glm::abs(glm::cos(time)) + glm::vec3(1, 1, 1), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f));
-    ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
+    ubo.view = glm::lookAt(glm::vec3(50.f, 50.f, 50.f) * glm::abs(glm::sin(time / 5)) + glm::vec3(1, 1, 1), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f));
+    ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.f);
 
     ubo.proj[1][1] *= -1; // Fix since GLM is made for OpenGL, the coordinate system is different for Vulkan
 

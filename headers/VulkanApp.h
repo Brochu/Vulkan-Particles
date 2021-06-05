@@ -1,3 +1,4 @@
+#include "VulkanInitializers.h"
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -66,9 +67,55 @@ struct Vertex
     }
 };
 
+struct PerInstance
+{
+    glm::mat4 transform;
+
+    static VkVertexInputBindingDescription getBindingDescription()
+    {
+        return vks::initializers::vertexInputBindingDescription(
+            1,
+            sizeof(PerInstance),
+            VK_VERTEX_INPUT_RATE_INSTANCE
+        );
+    }
+
+    static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions()
+    {
+        std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+
+        attributeDescriptions[0] = vks::initializers::vertexInputAttributeDescription(
+            1,
+            2,
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            offsetof(PerInstance, transform)
+        );
+        attributeDescriptions[1] = vks::initializers::vertexInputAttributeDescription(
+            1,
+            3,
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            offsetof(PerInstance, transform) + sizeof(glm::vec4) * 1
+        );
+        attributeDescriptions[2] = vks::initializers::vertexInputAttributeDescription(
+            1,
+            4,
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            offsetof(PerInstance, transform) + sizeof(glm::vec4) * 2
+        );
+        attributeDescriptions[3] = vks::initializers::vertexInputAttributeDescription(
+            1,
+            5,
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            offsetof(PerInstance, transform) + sizeof(glm::vec4) * 3
+        );
+
+        return attributeDescriptions;
+    }
+};
+
 struct UniformBufferObject
 {
-    glm::mat4 model;
+    glm::mat4 model; // Should use the per instance transform instead
     glm::mat4 view;
     glm::mat4 proj;
 
@@ -126,6 +173,7 @@ private:
             VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     void createVertexBuffer();
+    void createInstanceBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
     void updateUniformBuffer(uint32_t currentImage);
@@ -165,6 +213,8 @@ private:
 
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
+    VkBuffer instanceBuffer;
+    VkDeviceMemory instanceBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
 
@@ -199,6 +249,7 @@ private:
     {
         0, 1, 2, 2, 3, 0
     };
+    std::vector<PerInstance> perInstanceValues;
 
 #ifdef NDEBUG
     const bool enableValidationLayers = false;
