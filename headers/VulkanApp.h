@@ -8,8 +8,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <array>
-#include <assert.h>
-#include <chrono>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -240,10 +238,10 @@ private:
 
     const std::vector<Vertex> vertices =
     {   //  pos           color
-        {{-0.5f, -0.5f}, {1,0,0}},
-        {{ 0.5f, -0.5f}, {0,1,0}},
+        {{-0.5f, -0.5f}, {0,0,1}},
+        {{ 0.5f, -0.5f}, {0,1,1}},
         {{ 0.5f,  0.5f}, {0,0,1}},
-        {{-0.5f,  0.5f}, {1,1,1}},
+        {{-0.5f,  0.5f}, {0,1,1}},
     };
     const std::vector<uint16_t> indices =
     {
