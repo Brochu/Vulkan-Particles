@@ -3,6 +3,8 @@
 #include "VulkanInitializers.h"
 
 #include <algorithm>
+#include <assert.h>
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
@@ -70,7 +72,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData)
 {
-    std::cerr << "Validation layer: " << pCallbackData->pMessage << std::endl;
+    std::cerr << "[" << pCallbackData->pMessageIdName << "] - " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
 }
@@ -386,7 +388,7 @@ void VulkanApp::populateDebugMessagerCreateInfo(VkDebugUtilsMessengerCreateInfoE
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 
     createInfo.messageSeverity =
-        //VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 
@@ -632,7 +634,7 @@ SwapChainSupportDetails VulkanApp::querySwapChainSupport(VkPhysicalDevice device
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
     }
 
-    return details;;
+    return details;
 }
 
 VkSurfaceFormatKHR VulkanApp::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
