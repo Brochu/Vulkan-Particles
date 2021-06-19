@@ -73,7 +73,7 @@ struct Vertex
 
 struct PerInstance
 {
-    glm::mat4 transform;
+    glm::vec4 translate;
 
     static VkVertexInputBindingDescription getBindingDescription()
     {
@@ -84,33 +84,15 @@ struct PerInstance
         );
     }
 
-    static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions()
+    static std::array<VkVertexInputAttributeDescription, 1> getAttributeDescriptions()
     {
-        std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+        std::array<VkVertexInputAttributeDescription, 1> attributeDescriptions{};
 
         attributeDescriptions[0] = vks::initializers::vertexInputAttributeDescription(
             1,
             2,
             VK_FORMAT_R32G32B32A32_SFLOAT,
-            offsetof(PerInstance, transform)
-        );
-        attributeDescriptions[1] = vks::initializers::vertexInputAttributeDescription(
-            1,
-            3,
-            VK_FORMAT_R32G32B32A32_SFLOAT,
-            offsetof(PerInstance, transform) + sizeof(glm::vec4) * 1
-        );
-        attributeDescriptions[2] = vks::initializers::vertexInputAttributeDescription(
-            1,
-            4,
-            VK_FORMAT_R32G32B32A32_SFLOAT,
-            offsetof(PerInstance, transform) + sizeof(glm::vec4) * 2
-        );
-        attributeDescriptions[3] = vks::initializers::vertexInputAttributeDescription(
-            1,
-            5,
-            VK_FORMAT_R32G32B32A32_SFLOAT,
-            offsetof(PerInstance, transform) + sizeof(glm::vec4) * 3
+            offsetof(PerInstance, translate)
         );
 
         return attributeDescriptions;
