@@ -72,7 +72,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData)
 {
-    std::cerr << "][" << pCallbackData->pMessageIdName << "] - "
+    std::cerr << "[" << pCallbackData->pMessageIdName << "] - "
         << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
@@ -124,9 +124,11 @@ void VulkanApp::initVulkan()
 
     createRenderPass();
     createDescriptorSetLayout();
+    createComputeDescSetLayout();
     createGraphicsPipeline();
     createFramebuffers();
     createCommandPool();
+    createComputeCommandPool();
     createVertexBuffer();
     createInstanceBuffer();
     createIndexBuffer();
@@ -135,7 +137,6 @@ void VulkanApp::initVulkan()
     createDescriptorSets();
     createCommandBuffers();
     createSyncObjs();
-
 }
 
 void VulkanApp::cleanupSwapChain()
@@ -289,6 +290,7 @@ void VulkanApp::cleanup()
     vkFreeMemory(device, vertexBufferMemory, nullptr);
 
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(device, computeDescSetLayout, nullptr);
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
         vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
@@ -297,6 +299,7 @@ void VulkanApp::cleanup()
     }
 
     vkDestroyCommandPool(device, commandPool, nullptr);
+    vkDestroyCommandPool(device, computeCommandPool, nullptr);
     vkDestroyDevice(device, nullptr);
 
     if (enableValidationLayers)
@@ -561,6 +564,7 @@ void VulkanApp::createLogicalDevice()
     {
         indices.graphicsFamily.value(),
         indices.presentFamily.value(),
+        indices.computeFamily.value()
     };
 
     float queuePriority = 1.f;
@@ -798,6 +802,26 @@ void VulkanApp::createDescriptorSetLayout()
     if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create descriptor set layout ...");
+    }
+}
+
+void VulkanApp::createComputeDescSetLayout()
+{
+    VkDescriptorSetLayoutBinding sbLayoutBinding = vks::initializers::descriptorSetLayoutBinding(
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_SHADER_STAGE_COMPUTE_BIT,
+        0,
+        static_cast<uint32_t>(perInstanceValues.size())
+    );
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = vks::initializers::descriptorSetLayoutCreateInfo(
+        &sbLayoutBinding,
+        1
+    );
+
+    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &computeDescSetLayout) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create descriptor set layout for compute stage");
     }
 }
 
@@ -1095,6 +1119,21 @@ void VulkanApp::createCommandPool()
     }
 }
 
+void VulkanApp::createComputeCommandPool()
+{
+    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.computeFamily.value();
+    poolInfo.flags = 0;
+
+    if (vkCreateCommandPool(device, &poolInfo, nullptr, &computeCommandPool))
+    {
+        throw std::runtime_error("Failed to create compute command pool ...");
+    }
+}
+
 void VulkanApp::createCommandBuffers()
 {
     commandBuffers.resize(swapChainFramebuffers.size());
@@ -1296,7 +1335,6 @@ void VulkanApp::createVertexBuffer()
 
 void VulkanApp::createInstanceBuffer()
 {
-    perInstanceValues.resize(1000000);
     for(int i = 0; i < perInstanceValues.size(); ++i)
     {
         float x = ((rand() / (float) RAND_MAX) - 0.5f) * 100;
@@ -1321,7 +1359,7 @@ void VulkanApp::createInstanceBuffer()
     vkUnmapMemory(device, stagingBufferMemory);
 
     createBuffer(bufferSize,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         instanceBuffer,
         instanceBufferMemory);
@@ -1387,9 +1425,15 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
 
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.f), time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
-    ubo.view = glm::lookAt(glm::vec3(50.f, 50.f, 50.f) * glm::abs(glm::sin(time/2)) + glm::vec3(1, 1, 1), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f));
-    ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.f);
 
+    glm::vec3 basePos(0.f, 0.f, 75.f);
+    glm::vec3 xRotation = glm::vec3(50.f, 0.f, 0.f) * glm::cos(time / 30);
+    glm::vec3 yRotation = glm::vec3(0.f, 50.f, 0.f) * glm::sin(time / 30);
+    glm::vec3 lookAt(0.f, 0.f, 0.f);
+    glm::vec3 upDir(0.f, 0.f, 1.f);
+    ubo.view = glm::lookAt(basePos + xRotation + yRotation, lookAt, upDir);
+
+    ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.f);
     ubo.proj[1][1] *= -1; // Fix since GLM is made for OpenGL, the coordinate system is different for Vulkan
 
     ubo.time = { time, time * 2, time * time, time / 2 };

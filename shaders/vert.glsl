@@ -22,8 +22,6 @@ void main()
     gl_Position = gl_Position + instancedTransform; // Instanced move
     gl_Position = ubo.proj * ubo.view * gl_Position; // Rest of transform to screen space
 
-    //gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 0.0, 1.0) + instancedTransform;
-
     fragColor = inColor;
     //fragColor = instancedTransform.xyz;
 }

@@ -144,11 +144,13 @@ private:
     void createSwapChain();
     void createImageViews();
     void createDescriptorSetLayout();
+    void createComputeDescSetLayout();
     void createGraphicsPipeline();
     VkShaderModule createShaderModule(const std::vector<char>& bytecode);
     void createRenderPass();
     void createFramebuffers();
     void createCommandPool();
+    void createComputeCommandPool();
     void createCommandBuffers();
     void createSyncObjs();
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -187,11 +189,13 @@ private:
     std::vector<VkImageView> swapChainImageViews;
     VkRenderPass renderPass;
     VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorSetLayout computeDescSetLayout;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
     VkCommandPool commandPool;
+    VkCommandPool computeCommandPool;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -227,16 +231,16 @@ private:
 
     const std::vector<Vertex> vertices =
     {   //  pos           color
-        {{-0.5f, -0.5f}, {0,0,1}},
-        {{ 0.5f, -0.5f}, {0,1,1}},
-        {{ 0.5f,  0.5f}, {0,0,1}},
-        {{-0.5f,  0.5f}, {0,1,1}},
+        {{-0.2f, -0.2f}, {0,0,1}},
+        {{ 0.2f, -0.2f}, {0,1,1}},
+        {{ 0.2f,  0.2f}, {0,0,1}},
+        {{-0.2f,  0.2f}, {0,1,1}},
     };
     const std::vector<uint16_t> indices =
     {
         0, 1, 2, 2, 3, 0
     };
-    std::vector<PerInstance> perInstanceValues;
+    std::vector<PerInstance> perInstanceValues = std::vector<PerInstance>(100000);
 
 #ifdef NDEBUG
     const bool enableValidationLayers = false;
