@@ -22,8 +22,14 @@ struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
+    std::optional<uint32_t> computeFamily;
 
-    bool isComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
+    bool isComplete()
+    {
+        return graphicsFamily.has_value() &&
+            presentFamily.has_value() &&
+            computeFamily.has_value();
+    }
 };
 
 struct SwapChainSupportDetails
@@ -189,6 +195,7 @@ private:
     VkDevice device;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
+    VkQueue computeQueue;
     VkSurfaceKHR surface;
 
     VkSwapchainKHR swapChain;

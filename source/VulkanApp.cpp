@@ -72,7 +72,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData)
 {
-    std::cerr << "[" << pCallbackData->pMessageIdName << "] - " << pCallbackData->pMessage << std::endl;
+    std::cerr << "][" << pCallbackData->pMessageIdName << "] - "
+        << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
 }
@@ -388,7 +389,7 @@ void VulkanApp::populateDebugMessagerCreateInfo(VkDebugUtilsMessengerCreateInfoE
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 
     createInfo.messageSeverity =
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+        //VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 
@@ -531,9 +532,10 @@ QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice device)
     int i = 0;
     for(const auto& family : queueFamilies)
     {
-        if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        if ((family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && (family.queueFlags & VK_QUEUE_COMPUTE_BIT))
         {
             indices.graphicsFamily = i;
+            indices.computeFamily = i;
         }
 
         VkBool32 presentSupport = false;
@@ -601,6 +603,7 @@ void VulkanApp::createLogicalDevice()
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+    vkGetDeviceQueue(device, indices.computeFamily.value(), 0, &computeQueue);
 }
 
 void VulkanApp::createSurface()
@@ -1386,7 +1389,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
 
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.f), time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
-    ubo.view = glm::lookAt(glm::vec3(50.f, 50.f, 50.f) * glm::abs(glm::sin(time / 5)) + glm::vec3(1, 1, 1), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f));
+    ubo.view = glm::lookAt(glm::vec3(50.f, 50.f, 50.f) * glm::abs(glm::sin(time/2)) + glm::vec3(1, 1, 1), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f));
     ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.f);
 
     ubo.proj[1][1] *= -1; // Fix since GLM is made for OpenGL, the coordinate system is different for Vulkan
