@@ -165,8 +165,9 @@ private:
     void createIndexBuffer();
     void createUniformBuffers();
     void updateUniformBuffer(uint32_t currentImage);
-    void createDescriptorPool();
+    void createDescriptorPools();
     void createDescriptorSets();
+    void createComputeDescriptorSet();
 
     void setupDebugMessenger();
     void populateDebugMessagerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
@@ -213,6 +214,10 @@ private:
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
+
+    VkDescriptorPool computeDescriptorPool;
+    VkDescriptorSet computeDescriptorSet;
+
     size_t currentFrame = 0;
 
     const uint32_t WIDTH = 800;

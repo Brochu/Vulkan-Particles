@@ -133,8 +133,9 @@ void VulkanApp::initVulkan()
     createInstanceBuffer();
     createIndexBuffer();
     createUniformBuffers();
-    createDescriptorPool();
+    createDescriptorPools();
     createDescriptorSets();
+    createComputeDescriptorSet();
     createCommandBuffers();
     createSyncObjs();
 }
@@ -165,6 +166,7 @@ void VulkanApp::cleanupSwapChain()
     }
 
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+    vkDestroyDescriptorPool(device, computeDescriptorPool, nullptr);
 }
 
 void VulkanApp::recreateSwapChain()
@@ -187,8 +189,9 @@ void VulkanApp::recreateSwapChain()
     createGraphicsPipeline();
     createFramebuffers();
     createUniformBuffers();
-    createDescriptorPool();
+    createDescriptorPools();
     createDescriptorSets();
+    createComputeDescriptorSet();
     createCommandBuffers();
 }
 
@@ -811,7 +814,7 @@ void VulkanApp::createComputeDescSetLayout()
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK_SHADER_STAGE_COMPUTE_BIT,
         0,
-        static_cast<uint32_t>(perInstanceValues.size())
+        1
     );
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = vks::initializers::descriptorSetLayoutCreateInfo(
@@ -1444,7 +1447,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
     vkUnmapMemory(device, uniformBuffersMemory[currentImage]);
 }
 
-void VulkanApp::createDescriptorPool()
+void VulkanApp::createDescriptorPools()
 {
     auto poolSize = vks::initializers::descriptorPoolSize(
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -1455,6 +1458,16 @@ void VulkanApp::createDescriptorPool()
     if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create descriptor pool ...");
+    }
+
+    auto computePoolSize = vks::initializers::descriptorPoolSize(
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    auto computePoolInfo = vks::initializers::descriptorPoolCreateInfo(1, &computePoolSize, 1);
+
+    if (vkCreateDescriptorPool(device, &computePoolInfo, nullptr, &computeDescriptorPool) != VK_SUCCESS)
+    {
+        printf("DON'T LOOK, JUST TESTING\n");
+        throw std::runtime_error("Failed to create compute descriptor pool ...");
     }
 }
 
@@ -1489,5 +1502,35 @@ void VulkanApp::createDescriptorSets()
 
         vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
     }
+}
+
+void VulkanApp::createComputeDescriptorSet()
+{
+    std::vector<VkDescriptorSetLayout> layouts { computeDescSetLayout };
+
+    auto allocInfo = vks::initializers::descriptorSetAllocateInfo(
+        computeDescriptorPool,
+        layouts.data(),
+        1
+    );
+
+    VkResult r;
+    if ((r = vkAllocateDescriptorSets(device, &allocInfo, &computeDescriptorSet)) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to allocate compute descriptor set...");
+    }
+
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = instanceBuffer;
+    bufferInfo.offset = 0;
+    bufferInfo.range = sizeof(PerInstance);
+
+    auto descriptorWrite = vks::initializers::writeDescriptorSet(
+        computeDescriptorSet,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        0,
+        &bufferInfo);
+
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 }
 
