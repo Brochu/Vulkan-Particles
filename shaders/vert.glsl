@@ -18,9 +18,13 @@ layout(location = 1) out vec3 fragColor;
 
 void main()
 {
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 0.0, 1.0) + instancedTransform;
+    gl_Position = ubo.model * vec4(inPosition, 0.0, 1.0); // Change to world space
+    gl_Position = gl_Position + instancedTransform; // Instanced move
+    gl_Position = ubo.proj * ubo.view * gl_Position; // Rest of transform to screen space
+
+    //gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 0.0, 1.0) + instancedTransform;
 
     fragColor = inColor;
-    //fragColor = mix(vec3(1, 1, 1), inColor, abs(cos(ubo.time.y)));
+    //fragColor = instancedTransform.xyz;
 }
 

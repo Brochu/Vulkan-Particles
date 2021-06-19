@@ -843,9 +843,6 @@ void VulkanApp::createGraphicsPipeline()
         vertexAttributes[1],
 
         instanceAttributes[0],
-        instanceAttributes[1],
-        instanceAttributes[2],
-        instanceAttributes[3],
     };
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -1305,7 +1302,7 @@ void VulkanApp::createInstanceBuffer()
         float x = ((rand() / (float) RAND_MAX) - 0.5f) * 100;
         float y = ((rand() / (float) RAND_MAX) - 0.5f) * 100;
         float z = ((rand() / (float) RAND_MAX) - 0.5f) * 50;
-        perInstanceValues[i].translate = glm::vec4(x, y, z, 1.f);
+        perInstanceValues[i].translate = glm::vec4(x, y, z, 0.f);
     }
 
     VkDeviceSize bufferSize = sizeof(perInstanceValues[0]) * perInstanceValues.size();
