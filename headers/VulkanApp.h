@@ -146,6 +146,7 @@ private:
     void createDescriptorSetLayout();
     void createComputeDescSetLayout();
     void createGraphicsPipeline();
+    void createComputePipeline();
     VkShaderModule createShaderModule(const std::vector<char>& bytecode);
     void createRenderPass();
     void createFramebuffers();
@@ -192,7 +193,9 @@ private:
     VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorSetLayout computeDescSetLayout;
     VkPipelineLayout pipelineLayout;
+    VkPipelineLayout computePipelineLayout;
     VkPipeline graphicsPipeline;
+    VkPipeline computePipeline;
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
     VkCommandPool commandPool;

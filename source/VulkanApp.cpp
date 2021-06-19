@@ -126,6 +126,7 @@ void VulkanApp::initVulkan()
     createDescriptorSetLayout();
     createComputeDescSetLayout();
     createGraphicsPipeline();
+    createComputePipeline();
     createFramebuffers();
     createCommandPool();
     createComputeCommandPool();
@@ -150,7 +151,9 @@ void VulkanApp::cleanupSwapChain()
     vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 
     vkDestroyPipeline(device, graphicsPipeline, nullptr);
+    vkDestroyPipeline(device, computePipeline, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+    vkDestroyPipelineLayout(device, computePipelineLayout, nullptr);
     vkDestroyRenderPass(device, renderPass, nullptr);
 
     for (auto imageView : swapChainImageViews)
@@ -187,6 +190,7 @@ void VulkanApp::recreateSwapChain()
     createImageViews();
     createRenderPass();
     createGraphicsPipeline();
+    createComputePipeline();
     createFramebuffers();
     createUniformBuffers();
     createDescriptorPools();
@@ -813,14 +817,11 @@ void VulkanApp::createComputeDescSetLayout()
     VkDescriptorSetLayoutBinding sbLayoutBinding = vks::initializers::descriptorSetLayoutBinding(
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK_SHADER_STAGE_COMPUTE_BIT,
-        0,
-        1
+        0
     );
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo = vks::initializers::descriptorSetLayoutCreateInfo(
-        &sbLayoutBinding,
-        1
-    );
+    std::vector<VkDescriptorSetLayoutBinding> bindings = { sbLayoutBinding };
+    VkDescriptorSetLayoutCreateInfo layoutInfo = vks::initializers::descriptorSetLayoutCreateInfo(bindings);
 
     if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &computeDescSetLayout) != VK_SUCCESS)
     {
@@ -1011,6 +1012,40 @@ void VulkanApp::createGraphicsPipeline()
     // Cleanup shader modules
     vkDestroyShaderModule(device, vertShaderModule, nullptr);
     vkDestroyShaderModule(device, fragShaderModule, nullptr);
+}
+
+void VulkanApp::createComputePipeline()
+{
+    auto compShaderCode = readFile("comp.spv");
+    VkShaderModule compShaderModule = createShaderModule(compShaderCode);
+
+    VkPipelineShaderStageCreateInfo shaderStageInfo{};
+    shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    shaderStageInfo.module = compShaderModule;
+    shaderStageInfo.pName = "main";
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &computeDescSetLayout;
+
+    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &computePipelineLayout) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create compute pipeline layout ...");
+    }
+
+    VkComputePipelineCreateInfo compPipelineInfo{};
+    compPipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    compPipelineInfo.stage = shaderStageInfo;
+    compPipelineInfo.layout = computePipelineLayout;
+
+    if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &compPipelineInfo, nullptr, &computePipeline) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create compute pipeline ...");
+    }
+
+    vkDestroyShaderModule(device, compShaderModule, nullptr);
 }
 
 VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& bytecode)
