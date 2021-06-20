@@ -153,6 +153,7 @@ private:
     void createCommandPool();
     void createComputeCommandPool();
     void createCommandBuffers();
+    void createComputeCommandBuffers();
     void createSyncObjs();
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     void createBuffer(VkDeviceSize size,
@@ -201,6 +202,7 @@ private:
     VkCommandPool commandPool;
     VkCommandPool computeCommandPool;
     std::vector<VkCommandBuffer> commandBuffers;
+    VkCommandBuffer computeCommandBuffer;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;

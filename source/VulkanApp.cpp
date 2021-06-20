@@ -138,6 +138,7 @@ void VulkanApp::initVulkan()
     createDescriptorSets();
     createComputeDescriptorSet();
     createCommandBuffers();
+    createComputeCommandBuffers();
     createSyncObjs();
 }
 
@@ -197,6 +198,7 @@ void VulkanApp::recreateSwapChain()
     createDescriptorSets();
     createComputeDescriptorSet();
     createCommandBuffers();
+    createComputeCommandBuffers();
 }
 
 void VulkanApp::mainLoop()
@@ -1238,6 +1240,10 @@ void VulkanApp::createCommandBuffers()
             throw std::runtime_error("Failed to record command buffer ...");
         }
     }
+}
+
+void VulkanApp::createComputeCommandBuffers()
+{
 }
 
 void VulkanApp::createSyncObjs()
