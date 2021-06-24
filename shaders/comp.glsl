@@ -19,5 +19,5 @@ void main()
     //    current_pos = -2.0 * velocity + current_pos * 0.05;
     //}
 
-    positions.pos[gl_GlobalInvocationID.x] = current_pos;
+    positions.pos[gl_GlobalInvocationID.x] = current_pos + vec4(1, 0, 0, 0);
 }

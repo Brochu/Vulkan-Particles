@@ -1,17 +1,27 @@
 #include "VulkanApp.h"
 #include "GLFW/glfw3.h"
 #include "VulkanInitializers.h"
+#include "glm/gtx/string_cast.hpp"
+#include <glm/ext.hpp>
 
 #include <algorithm>
 #include <assert.h>
 #include <chrono>
 #include <cstdint>
 #include <cstring>
-#include <stdexcept>
 #include <stdint.h>
 #include <stdio.h>
 #include <vulkan/vk_platform.h>
 #include <vulkan/vulkan_core.h>
+
+inline static void VK_CHECK_RESULT(VkResult res)
+{
+    if (res != VK_SUCCESS)
+    {
+        printf("=> FATAL: VkResult is %d in %s atr line %d\n", res, __FILE__, __LINE__);
+        assert(res == VK_SUCCESS);
+    }
+}
 
 static std::vector<char> readFile(const std::string& filename)
 {
@@ -206,10 +216,24 @@ void VulkanApp::mainLoop()
     while(!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
+        updateParticles();
         drawFrame();
     }
 
     vkDeviceWaitIdle(device);
+}
+void VulkanApp::updateParticles()
+{
+    auto submitInfo = vks::initializers::submitInfo();
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &computeCommandBuffer;
+
+    if (vkQueueSubmit(computeQueue, 1, &submitInfo, nullptr))
+    {
+        throw std::runtime_error("Failed to submit compute command buffer to the queue");
+    }
+
+    vkQueueWaitIdle(computeQueue); // For now we wait until compute shader is done the work
 }
 void VulkanApp::drawFrame()
 {
@@ -1271,8 +1295,8 @@ void VulkanApp::createComputeCommandBuffers()
         0,
         nullptr);
 
-    int32_t xsize = static_cast<uint32_t>(perInstanceValues.size()) / 32;
-    vkCmdDispatch(computeCommandBuffer, xsize, 1, 1);
+    //int32_t xsize = static_cast<uint32_t>(perInstanceValues.size()) / 32;
+    vkCmdDispatch(computeCommandBuffer, 1, 1, 1);
 
     if (vkEndCommandBuffer(computeCommandBuffer) != VK_SUCCESS)
     {
@@ -1415,9 +1439,9 @@ void VulkanApp::createInstanceBuffer()
 {
     for(int i = 0; i < perInstanceValues.size(); ++i)
     {
-        float x = ((rand() / (float) RAND_MAX) - 0.5f) * 100;
-        float y = ((rand() / (float) RAND_MAX) - 0.5f) * 100;
-        float z = ((rand() / (float) RAND_MAX) - 0.5f) * 50;
+        float x = ((rand() / (float) RAND_MAX) - 0.5f) * 50;
+        float y = ((rand() / (float) RAND_MAX) - 0.5f) * 50;
+        float z = ((rand() / (float) RAND_MAX) - 0.5f) * 25;
         perInstanceValues[i].translate = glm::vec4(x, y, z, 0.f);
     }
 
@@ -1509,7 +1533,8 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
     glm::vec3 yRotation = glm::vec3(0.f, 50.f, 0.f) * glm::sin(time / 30);
     glm::vec3 lookAt(0.f, 0.f, 0.f);
     glm::vec3 upDir(0.f, 0.f, 1.f);
-    ubo.view = glm::lookAt(basePos + xRotation + yRotation, lookAt, upDir);
+    //ubo.view = glm::lookAt(basePos + xRotation + yRotation, lookAt, upDir);
+    ubo.view = glm::lookAt(glm::vec3(50.f, 50.f, 75.f), lookAt, upDir);
 
     ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.f);
     ubo.proj[1][1] *= -1; // Fix since GLM is made for OpenGL, the coordinate system is different for Vulkan

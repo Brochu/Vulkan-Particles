@@ -13,7 +13,6 @@
 #include <iostream>
 #include <optional>
 #include <set>
-#include <stdexcept>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -120,6 +119,7 @@ private:
     void initWindow();
     void initVulkan();
     void mainLoop();
+    void updateParticles();
     void drawFrame();
     void cleanup();
 
@@ -241,16 +241,16 @@ private:
 
     const std::vector<Vertex> vertices =
     {   //  pos           color
-        {{-0.2f, -0.2f}, {0,0,1}},
-        {{ 0.2f, -0.2f}, {0,1,1}},
-        {{ 0.2f,  0.2f}, {0,0,1}},
-        {{-0.2f,  0.2f}, {0,1,1}},
+        {{-0.8f, -0.8f}, {0,0,1}},
+        {{ 0.8f, -0.8f}, {0,1,1}},
+        {{ 0.8f,  0.8f}, {0,0,1}},
+        {{-0.8f,  0.8f}, {0,1,1}},
     };
     const std::vector<uint16_t> indices =
     {
         0, 1, 2, 2, 3, 0
     };
-    std::vector<PerInstance> perInstanceValues = std::vector<PerInstance>(100000);
+    std::vector<PerInstance> perInstanceValues = std::vector<PerInstance>(10);
 
 #ifdef NDEBUG
     const bool enableValidationLayers = false;
