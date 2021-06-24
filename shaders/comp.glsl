@@ -14,8 +14,8 @@ float rand(vec2 co)
 void main()
 {
     vec4 current_pos = positions.pos[gl_GlobalInvocationID.x];
-    float xmovement = rand(current_pos.xy + 1);
-    float ymovement = rand(current_pos.xy + 5.0);
+    float xmovement = rand(current_pos.xy + 1) / 2;
+    float ymovement = rand(current_pos.xy + 5.0) / 2;
 
     //vec2 velocity = velocities.vel[gl_GlobalInvocationID.x];
     //current_pos += velocity;

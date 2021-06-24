@@ -1295,8 +1295,8 @@ void VulkanApp::createComputeCommandBuffers()
         0,
         nullptr);
 
-    //int32_t xsize = static_cast<uint32_t>(perInstanceValues.size()) / 32;
-    vkCmdDispatch(computeCommandBuffer, 1, 1, 1);
+    int32_t xsize = static_cast<uint32_t>(perInstanceValues.size());
+    vkCmdDispatch(computeCommandBuffer, xsize, 1, 1);
 
     if (vkEndCommandBuffer(computeCommandBuffer) != VK_SUCCESS)
     {
@@ -1439,9 +1439,9 @@ void VulkanApp::createInstanceBuffer()
 {
     for(int i = 0; i < perInstanceValues.size(); ++i)
     {
-        float x = ((rand() / (float) RAND_MAX) - 0.5f) * 50;
-        float y = ((rand() / (float) RAND_MAX) - 0.5f) * 50;
-        float z = ((rand() / (float) RAND_MAX) - 0.5f) * 25;
+        float x = ((rand() / (float) RAND_MAX) - 0.5f) * 75;
+        float y = ((rand() / (float) RAND_MAX) - 0.5f) * 75;
+        float z = ((rand() / (float) RAND_MAX) - 0.5f) * 37;
         perInstanceValues[i].translate = glm::vec4(x, y, z, 0.f);
     }
 
@@ -1533,8 +1533,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
     glm::vec3 yRotation = glm::vec3(0.f, 50.f, 0.f) * glm::sin(time / 30);
     glm::vec3 lookAt(0.f, 0.f, 0.f);
     glm::vec3 upDir(0.f, 0.f, 1.f);
-    //ubo.view = glm::lookAt(basePos + xRotation + yRotation, lookAt, upDir);
-    ubo.view = glm::lookAt(glm::vec3(50.f, 50.f, 75.f), lookAt, upDir);
+    ubo.view = glm::lookAt(basePos + xRotation + yRotation, lookAt, upDir);
 
     ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.f);
     ubo.proj[1][1] *= -1; // Fix since GLM is made for OpenGL, the coordinate system is different for Vulkan
@@ -1622,7 +1621,7 @@ void VulkanApp::createComputeDescriptorSet()
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = instanceBuffer;
     bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(PerInstance);
+    bufferInfo.range = sizeof(PerInstance) * static_cast<uint32_t>(perInstanceValues.size());
 
     auto descriptorWrite = vks::initializers::writeDescriptorSet(
         computeDescriptorSet,

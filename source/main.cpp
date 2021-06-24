@@ -10,9 +10,9 @@ int main(int argc, char** argv)
     {
         app.run();
     }
-    catch(std::exception e)
+    catch(std::runtime_error e)
     {
-        std::cerr << e.what() << std::endl;
+        printf("=> FATAL: %s\n", e.what());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
