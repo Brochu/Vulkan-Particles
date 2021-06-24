@@ -1165,8 +1165,8 @@ void VulkanApp::createComputeCommandPool()
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.computeFamily.value();
     poolInfo.flags = 0;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.computeFamily.value();
 
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &computeCommandPool))
     {
@@ -1224,13 +1224,13 @@ void VulkanApp::createCommandBuffers()
         vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(commandBuffers[i],
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                pipelineLayout,
-                0,
-                1,
-                &descriptorSets[i],
-                0,
-                nullptr);
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipelineLayout,
+            0,
+            1,
+            &descriptorSets[i],
+            0,
+            nullptr);
 
         vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), static_cast<uint32_t>(perInstanceValues.size()), 0, 0, 0);
         vkCmdEndRenderPass(commandBuffers[i]);
@@ -1244,6 +1244,40 @@ void VulkanApp::createCommandBuffers()
 
 void VulkanApp::createComputeCommandBuffers()
 {
+    auto commandBufferAllocateInfo = vks::initializers::commandBufferAllocateInfo(
+        computeCommandPool,
+        VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        1);
+
+    if (vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &computeCommandBuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to allocate compute command buffer");
+    }
+
+    auto beginInfo = vks::initializers::commandBufferBeginInfo();
+    if (vkBeginCommandBuffer(computeCommandBuffer, &beginInfo) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to begin recording the compute command buffer");
+    }
+
+    vkCmdBindPipeline(computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+    vkCmdBindDescriptorSets(
+        computeCommandBuffer,
+        VK_PIPELINE_BIND_POINT_COMPUTE,
+        computePipelineLayout,
+        0,
+        1,
+        &computeDescriptorSet,
+        0,
+        nullptr);
+
+    int32_t xsize = static_cast<uint32_t>(perInstanceValues.size()) / 32;
+    vkCmdDispatch(computeCommandBuffer, xsize, 1, 1);
+
+    if (vkEndCommandBuffer(computeCommandBuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to record compute command buffer ...");
+    }
 }
 
 void VulkanApp::createSyncObjs()
