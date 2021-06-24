@@ -1507,7 +1507,6 @@ void VulkanApp::createDescriptorPools()
 
     if (vkCreateDescriptorPool(device, &computePoolInfo, nullptr, &computeDescriptorPool) != VK_SUCCESS)
     {
-        printf("DON'T LOOK, JUST TESTING\n");
         throw std::runtime_error("Failed to create compute descriptor pool ...");
     }
 }
