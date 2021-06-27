@@ -1439,10 +1439,11 @@ void VulkanApp::createInstanceBuffer()
 {
     for(int i = 0; i < perInstanceValues.size(); ++i)
     {
-        float x = ((rand() / (float) RAND_MAX) - 0.5f) * 75;
-        float y = ((rand() / (float) RAND_MAX) - 0.5f) * 75;
-        float z = ((rand() / (float) RAND_MAX) - 0.5f) * 37;
+        float x = ((rand() / (float) RAND_MAX) - 0.5f) * 50;
+        float y = ((rand() / (float) RAND_MAX) - 0.5f) * 50;
+        float z = ((rand() / (float) RAND_MAX) - 0.5f) * 25;
         perInstanceValues[i].translate = glm::vec4(x, y, z, 0.f);
+        perInstanceValues[i].vel = glm::vec4(x, y, z, 0.f) / 500.f;
     }
 
     VkDeviceSize bufferSize = sizeof(perInstanceValues[0]) * perInstanceValues.size();

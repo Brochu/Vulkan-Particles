@@ -73,6 +73,7 @@ struct Vertex
 struct PerInstance
 {
     glm::vec4 translate;
+    glm::vec4 vel;
 
     static VkVertexInputBindingDescription getBindingDescription()
     {
@@ -250,7 +251,7 @@ private:
     {
         0, 1, 2, 2, 3, 0
     };
-    std::vector<PerInstance> perInstanceValues = std::vector<PerInstance>(100000);
+    std::vector<PerInstance> perInstanceValues = std::vector<PerInstance>(65535);
 
 #ifdef NDEBUG
     const bool enableValidationLayers = false;
